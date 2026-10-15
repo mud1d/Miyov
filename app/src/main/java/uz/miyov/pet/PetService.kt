@@ -1,91 +1,145 @@
 package uz.miyov.pet
 
-import android.app.Service
-import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.content.Intent
+import android.app.*
+import android.content.*
 import android.graphics.*
-import android.media.AudioManager
-import android.media.ToneGenerator
-import android.os.Handler
-import android.os.IBinder
-import android.os.Looper
+import android.media.*
+import android.os.*
 import android.view.*
 import kotlin.math.*
 import kotlin.random.Random
 
-class PetService: Service() {
+class PetService : Service() {
  private lateinit var wm: WindowManager
- private lateinit var cat: CatView
- private lateinit var params: WindowManager.LayoutParams
- private val handler = Handler(Looper.getMainLooper())
- private var tone: ToneGenerator? = null
- private var ticks=0
- private var dir=1
- private val mover=object:Runnable { override fun run() {
-  if (::cat.isInitialized) {
-   ticks++
-   if (ticks%40==0) dir=if(Random.nextBoolean()) 1 else -1
-   if (ticks%5==0 && !cat.dragging) {
-    val screen=resources.displayMetrics.widthPixels
-    params.x=(params.x+dir*6).coerceIn(-screen/2+80,screen/2-80)
-    try { wm.updateViewLayout(cat,params) } catch (_:Exception) {}
+ private lateinit var pet: PetView
+ private lateinit var lp: WindowManager.LayoutParams
+ private val h=Handler(Looper.getMainLooper())
+ private var frame=0
+ private var direction=1
+ private var tone:ToneGenerator?=null
+ private val ticker=object:Runnable { override fun run() {
+  if (::pet.isInitialized) {
+   frame++
+   if(frame%110==0) direction=if(Random.nextBoolean()) 1 else -1
+   if(frame%4==0 && !pet.dragging && !pet.sleeping) {
+    val half=resources.displayMetrics.widthPixels/2-105
+    lp.x=(lp.x+direction*3).coerceIn(-half,half)
+    try { wm.updateViewLayout(pet,lp) } catch (_:Exception) {}
    }
-   cat.sleeping = ticks%180 in 145..178
-   cat.invalidate()
-   handler.postDelayed(this,100)
+   pet.sleeping=frame%480 in 355..465
+   pet.invalidate()
+   h.postDelayed(this,45)
   }
  } }
  override fun onCreate() { super.onCreate()
-  val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-  manager.createNotificationChannel(NotificationChannel("miyov", "Miyov ishlamoqda", NotificationManager.IMPORTANCE_LOW))
-  val notification = Notification.Builder(this, "miyov")
-    .setContentTitle("Miyov 🐱").setContentText("Mushuk ekranda yurmoqda")
-    .setSmallIcon(android.R.drawable.ic_menu_view).build()
-  startForeground(7, notification)
-  tone=ToneGenerator(AudioManager.STREAM_MUSIC,75)
+  val nm=getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+  nm.createNotificationChannel(NotificationChannel("miyov","Miyov",NotificationManager.IMPORTANCE_LOW))
+  startForeground(7,Notification.Builder(this,"miyov").setSmallIcon(android.R.drawable.ic_menu_view).setContentTitle("Miyov 🐱").setContentText("Miyov ekranda").build())
+  tone=ToneGenerator(AudioManager.STREAM_MUSIC,65)
   wm=getSystemService(WINDOW_SERVICE) as WindowManager
-  params=WindowManager.LayoutParams(180,180,WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+  lp=WindowManager.LayoutParams(260,280,WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
-   PixelFormat.TRANSLUCENT).apply { gravity=Gravity.TOP or Gravity.CENTER_HORIZONTAL; y=240 }
-  cat=CatView()
-  try { wm.addView(cat,params); handler.post(mover) } catch (_:Exception) { stopSelf() }
+   PixelFormat.TRANSLUCENT).apply {gravity=Gravity.TOP or Gravity.CENTER_HORIZONTAL;y=260}
+  pet=PetView()
+  try {wm.addView(pet,lp);h.post(ticker)} catch (_:Exception){stopSelf()}
  }
  override fun onStartCommand(intent:Intent?,flags:Int,startId:Int)=START_STICKY
- override fun onDestroy() { tone?.release(); tone=null; handler.removeCallbacks(mover); if(::cat.isInitialized) try { wm.removeView(cat) } catch (_:Exception) {}; super.onDestroy() }
  override fun onBind(intent:Intent?):IBinder?=null
- inner class CatView:View(this@PetService) {
-  var dragging=false; var sleeping=false
-  private val p=Paint(3)
-  private var downX=0f; private var downY=0f; private var lastX=0f; private var lastY=0f; private var downAt=0L
-  override fun onDraw(c:Canvas) { super.onDraw(c)
-   c.save(); c.scale(width/180f,height/180f)
-   p.color=Color.rgb(243,164,91)
-   c.drawOval(26f,74f,155f,158f,p)
-   val ears=Path().apply { moveTo(38f,75f); lineTo(45f,18f); lineTo(85f,65f); lineTo(122f,18f); lineTo(143f,78f); close() }
-   c.drawPath(ears,p)
-   p.color=Color.rgb(255,195,201)
-   c.drawOval(46f,35f,62f,66f,p); c.drawOval(116f,35f,133f,66f,p)
-   p.color=Color.rgb(255,210,154); c.drawOval(31f,56f,151f,150f,p)
-   p.color=Color.rgb(42,37,38)
-   if(sleeping) { p.strokeWidth=4f; c.drawLine(57f,104f,76f,104f,p); c.drawLine(108f,104f,127f,104f,p) }
-   else { c.drawOval(62f,92f,73f,109f,p); c.drawOval(113f,92f,124f,109f,p) }
-   p.color=Color.rgb(232,115,128); val nose=Path().apply { moveTo(87f,115f); lineTo(101f,115f); lineTo(94f,123f); close() }; c.drawPath(nose,p)
-   p.color=Color.DKGRAY; p.strokeWidth=2f
-   for (side in listOf(-1,1)) { val start=if(side<0) 84f else 104f; c.drawLine(start,124f,start+side*40,118f,p); c.drawLine(start,129f,start+side*39,136f,p) }
-   c.restore()
+ override fun onDestroy(){h.removeCallbacks(ticker);tone?.release();if(::pet.isInitialized)try{wm.removeView(pet)}catch(_:Exception){};super.onDestroy()}
+
+ inner class PetView:View(this@PetService) {
+  var dragging=false;var sleeping=false
+  private val paint=Paint(3)
+  private var downX=0f;private var downY=0f;private var lastX=0f;private var lastY=0f;private var downTime=0L
+  private var loveUntil=0L;private var angryUntil=0L;private var butterflyUntil=0L
+  private var taps=0;private var lastTap=0L
+  private val orange=Color.rgb(245,168,88)
+  private val light=Color.rgb(255,221,177)
+  private val white=Color.rgb(255,248,236)
+  private val brown=Color.rgb(78,48,40)
+  private fun oval(c:Canvas,color:Int,l:Float,t:Float,r:Float,b:Float){paint.color=color;paint.style=Paint.Style.FILL;c.drawOval(l,t,r,b,paint)}
+  private fun circle(c:Canvas,color:Int,x:Float,y:Float,r:Float){paint.color=color;paint.style=Paint.Style.FILL;c.drawCircle(x,y,r,paint)}
+  private fun line(c:Canvas,color:Int,x:Float,y:Float,x2:Float,y2:Float,w:Float=2f){paint.color=color;paint.style=Paint.Style.STROKE;paint.strokeWidth=w;paint.strokeCap=Paint.Cap.ROUND;c.drawLine(x,y,x2,y2,paint);paint.style=Paint.Style.FILL}
+  private fun path(c:Canvas,color:Int,vararg pts:Float){val p=Path();p.moveTo(pts[0],pts[1]);var i=2;while(i<pts.size){p.lineTo(pts[i],pts[i+1]);i+=2};p.close();paint.color=color;c.drawPath(p,paint)}
+  private fun text(c:Canvas,s:String,x:Float,y:Float,size:Float,color:Int){paint.color=color;paint.textSize=size;paint.typeface=Typeface.create("sans-serif",Typeface.BOLD);paint.textAlign=Paint.Align.CENTER;c.drawText(s,x,y,paint)}
+  override fun onDraw(canvas:Canvas){super.onDraw(canvas)
+   canvas.save();canvas.scale(width/260f,height/280f)
+   val t=frame*.16f
+   val hop=if(sleeping) 0f else abs(sin(t.toDouble())).toFloat()*3f
+   canvas.translate(0f,-hop)
+   // Curved fluffy tail behind body
+   paint.color=orange;paint.style=Paint.Style.STROKE;paint.strokeWidth=24f;paint.strokeCap=Paint.Cap.ROUND
+   val tail=Path().apply {moveTo(177f,178f);cubicTo(238f,189f,244f,114f,215f+sin(t.toDouble()).toFloat()*9f,111f)}
+   canvas.drawPath(tail,paint);paint.style=Paint.Style.FILL
+   circle(canvas,light,215f+sin(t.toDouble()).toFloat()*9f,111f,14f)
+   // Animated paws
+   val step=if(sleeping)0f else sin(t.toDouble()).toFloat()*6f
+   oval(canvas,orange,69f,185f+step,104f,230f+step)
+   oval(canvas,orange,153f,185f-step,188f,230f-step)
+   oval(canvas,white,68f,215f+step,108f,239f+step)
+   oval(canvas,white,151f,215f-step,191f,239f-step)
+   // Body, chest, belly
+   oval(canvas,orange,67f,115f,195f,219f)
+   oval(canvas,light,82f,135f,184f,218f)
+   oval(canvas,white,112f,142f,165f,217f)
+   // ears, head
+   path(canvas,orange,63f,85f,67f,28f,111f,64f)
+   path(canvas,orange,150f,65f,194f,28f,199f,87f)
+   path(canvas,Color.rgb(255,168,172),75f,71f,76f,47f,99f,70f)
+   path(canvas,Color.rgb(255,168,172),164f,69f,187f,47f,188f,73f)
+   oval(canvas,orange,54f,57f,207f,171f)
+   oval(canvas,light,62f,77f,199f,172f)
+   oval(canvas,white,73f,122f,137f,172f)
+   oval(canvas,white,127f,122f,192f,172f)
+   // stripes
+   line(canvas,Color.rgb(220,127,64),109f,68f,114f,85f,5f)
+   line(canvas,Color.rgb(220,127,64),132f,66f,132f,84f,5f)
+   line(canvas,Color.rgb(220,127,64),153f,68f,148f,85f,5f)
+   if(sleeping || frame%150 in 145..149){
+    line(canvas,brown,85f,116f,113f,116f,4f);line(canvas,brown,150f,116f,178f,116f,4f)
+   }else{
+    oval(canvas,brown,86f,101f,113f,132f);oval(canvas,brown,150f,101f,177f,132f)
+    circle(canvas,Color.WHITE,95f,108f,7f);circle(canvas,Color.WHITE,159f,108f,7f)
+    circle(canvas,Color.WHITE,107f,122f,3f);circle(canvas,Color.WHITE,171f,122f,3f)
+   }
+   path(canvas,Color.rgb(234,121,137),124f,136f,140f,136f,132f,144f)
+   line(canvas,brown,132f,145f,132f,151f,2f)
+   line(canvas,brown,132f,151f,123f,155f,2f);line(canvas,brown,132f,151f,141f,155f,2f)
+   for (i in 0..1){val dy=i*8f;line(canvas,brown,112f,145f+dy,65f,140f+dy,1.5f);line(canvas,brown,152f,145f+dy,199f,140f+dy,1.5f)}
+   val now=System.currentTimeMillis()
+   if(sleeping) {text(canvas,"Zzz",203f,48f,23f,Color.rgb(149,170,238))}
+   if(now<loveUntil){
+    val rise=((loveUntil-now)/20).toFloat()
+    text(canvas,"♥",52f,58f-rise%32,30f,Color.rgb(255,92,140))
+    text(canvas,"♥",209f,92f-(rise*1.5f)%42,22f,Color.rgb(255,133,167))
+   }
+   if(now<angryUntil){text(canvas,"💢",207f,63f,29f,Color.RED)}
+   if(now<butterflyUntil){
+    val bx=190f+sin(t.toDouble()).toFloat()*20f
+    val by=52f+cos(t.toDouble()).toFloat()*14f
+    circle(canvas,Color.rgb(173,125,243),bx-6f,by,8f);circle(canvas,Color.rgb(251,156,218),bx+6f,by,8f)
+    line(canvas,brown,bx,by-8f,bx,by+9f,2f)
+   }
+   canvas.restore()
   }
-  override fun onTouchEvent(e:MotionEvent):Boolean { when(e.actionMasked) {
-   MotionEvent.ACTION_DOWN -> { downX=e.rawX;downY=e.rawY;lastX=e.rawX;lastY=e.rawY;downAt=System.currentTimeMillis();dragging=false;return true }
-   MotionEvent.ACTION_MOVE -> { val dx=e.rawX-lastX;val dy=e.rawY-lastY
-    if(hypot(e.rawX-downX,e.rawY-downY)>12) dragging=true
-    if(dragging) {params.x+=dx.toInt();params.y+=dy.toInt();wm.updateViewLayout(this,params)}
-    lastX=e.rawX;lastY=e.rawY;return true }
-   MotionEvent.ACTION_UP -> { if(!dragging) { if(System.currentTimeMillis()-downAt>650) {
-      stopSelf()
-     } else { try { tone?.startTone(ToneGenerator.TONE_PROP_BEEP2,250) } catch (_:Exception){} } }
-    dragging=false;return true }
-  }; return true }
+  override fun onTouchEvent(e:MotionEvent):Boolean {when(e.actionMasked){
+   MotionEvent.ACTION_DOWN->{downX=e.rawX;downY=e.rawY;lastX=e.rawX;lastY=e.rawY;downTime=System.currentTimeMillis();dragging=false;return true}
+   MotionEvent.ACTION_MOVE->{if(hypot(e.rawX-downX,e.rawY-downY)>12f)dragging=true
+    if(dragging){lp.x+=(e.rawX-lastX).toInt();lp.y+=(e.rawY-lastY).toInt();try{wm.updateViewLayout(this,lp)}catch(_:Exception){}}
+    lastX=e.rawX;lastY=e.rawY;return true}
+   MotionEvent.ACTION_UP->{val now=System.currentTimeMillis()
+    if(!dragging){
+     if(now-downTime>850){stopSelf()}
+     else{
+      if(now-lastTap<650)taps++ else taps=1
+      lastTap=now
+      if(taps>=4){angryUntil=now+1700;taps=0}
+      else if(taps==2){loveUntil=now+2000}
+      else if(taps==3){butterflyUntil=now+2500}
+      try{tone?.startTone(ToneGenerator.TONE_PROP_BEEP2,120)}catch(_:Exception){}
+     }
+    }
+    dragging=false;invalidate();return true}
+  };return true}
  }
 }
