@@ -3,7 +3,7 @@ package uz.miyov.pet
 import android.app.*
 import android.content.*
 import android.graphics.*
-import android.media.*
+import android.media.MediaPlayer
 import android.os.*
 import android.view.*
 import kotlin.math.*
@@ -11,135 +11,122 @@ import kotlin.random.Random
 
 class PetService : Service() {
  private lateinit var wm: WindowManager
- private lateinit var pet: PetView
- private lateinit var lp: WindowManager.LayoutParams
- private val h=Handler(Looper.getMainLooper())
- private var frame=0
- private var direction=1
- private var tone:ToneGenerator?=null
- private val ticker=object:Runnable { override fun run() {
-  if (::pet.isInitialized) {
-   frame++
-   if(frame%110==0) direction=if(Random.nextBoolean()) 1 else -1
-   if(frame%4==0 && !pet.dragging && !pet.sleeping) {
-    val half=resources.displayMetrics.widthPixels/2-105
-    lp.x=(lp.x+direction*3).coerceIn(-half,half)
-    try { wm.updateViewLayout(pet,lp) } catch (_:Exception) {}
+ private lateinit var cat: CatView
+ private lateinit var params: WindowManager.LayoutParams
+ private val handler = Handler(Looper.getMainLooper())
+ private var tick = 0
+ private var direction = 1
+ private var sound: MediaPlayer? = null
+ private val animator = object : Runnable {
+  override fun run() {
+   if (!::cat.isInitialized) return
+   tick++
+   if (tick % 180 == 0) direction = if (Random.nextBoolean()) 1 else -1
+   if (!cat.dragging && tick % 3 == 0 && cat.mode == "yurish") {
+    val limit = resources.displayMetrics.widthPixels / 2 - 110
+    params.x = (params.x + direction * 4).coerceIn(-limit, limit)
+    try { wm.updateViewLayout(cat, params) } catch (_: Exception) {}
    }
-   pet.sleeping=frame%480 in 355..465
-   pet.invalidate()
-   h.postDelayed(this,45)
+   cat.advance(tick)
+   handler.postDelayed(this, 90)
   }
- } }
- override fun onCreate() { super.onCreate()
-  val nm=getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-  nm.createNotificationChannel(NotificationChannel("miyov","Miyov",NotificationManager.IMPORTANCE_LOW))
-  startForeground(7,Notification.Builder(this,"miyov").setSmallIcon(android.R.drawable.ic_menu_view).setContentTitle("Miyov 🐱").setContentText("Miyov ekranda").build())
-  tone=ToneGenerator(AudioManager.STREAM_MUSIC,65)
-  wm=getSystemService(WINDOW_SERVICE) as WindowManager
-  lp=WindowManager.LayoutParams(260,280,WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-   WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
-   PixelFormat.TRANSLUCENT).apply {gravity=Gravity.TOP or Gravity.CENTER_HORIZONTAL;y=260}
-  pet=PetView()
-  try {wm.addView(pet,lp);h.post(ticker)} catch (_:Exception){stopSelf()}
  }
- override fun onStartCommand(intent:Intent?,flags:Int,startId:Int)=START_STICKY
- override fun onBind(intent:Intent?):IBinder?=null
- override fun onDestroy(){h.removeCallbacks(ticker);tone?.release();if(::pet.isInitialized)try{wm.removeView(pet)}catch(_:Exception){};super.onDestroy()}
-
- inner class PetView:View(this@PetService) {
-  var dragging=false;var sleeping=false
-  private val paint=Paint(3)
-  private var downX=0f;private var downY=0f;private var lastX=0f;private var lastY=0f;private var downTime=0L
-  private var loveUntil=0L;private var angryUntil=0L;private var butterflyUntil=0L
-  private var taps=0;private var lastTap=0L
-  private val orange=Color.rgb(245,168,88)
-  private val light=Color.rgb(255,221,177)
-  private val white=Color.rgb(255,248,236)
-  private val brown=Color.rgb(78,48,40)
-  private fun oval(c:Canvas,color:Int,l:Float,t:Float,r:Float,b:Float){paint.color=color;paint.style=Paint.Style.FILL;c.drawOval(l,t,r,b,paint)}
-  private fun circle(c:Canvas,color:Int,x:Float,y:Float,r:Float){paint.color=color;paint.style=Paint.Style.FILL;c.drawCircle(x,y,r,paint)}
-  private fun line(c:Canvas,color:Int,x:Float,y:Float,x2:Float,y2:Float,w:Float=2f){paint.color=color;paint.style=Paint.Style.STROKE;paint.strokeWidth=w;paint.strokeCap=Paint.Cap.ROUND;c.drawLine(x,y,x2,y2,paint);paint.style=Paint.Style.FILL}
-  private fun path(c:Canvas,color:Int,vararg pts:Float){val p=Path();p.moveTo(pts[0],pts[1]);var i=2;while(i<pts.size){p.lineTo(pts[i],pts[i+1]);i+=2};p.close();paint.color=color;c.drawPath(p,paint)}
-  private fun text(c:Canvas,s:String,x:Float,y:Float,size:Float,color:Int){paint.color=color;paint.textSize=size;paint.typeface=Typeface.create("sans-serif",Typeface.BOLD);paint.textAlign=Paint.Align.CENTER;c.drawText(s,x,y,paint)}
-  override fun onDraw(canvas:Canvas){super.onDraw(canvas)
-   canvas.save();canvas.scale(width/260f,height/280f)
-   val t=frame*.16f
-   val hop=if(sleeping) 0f else abs(sin(t.toDouble())).toFloat()*3f
-   canvas.translate(0f,-hop)
-   // Curved fluffy tail behind body
-   paint.color=orange;paint.style=Paint.Style.STROKE;paint.strokeWidth=24f;paint.strokeCap=Paint.Cap.ROUND
-   val tail=Path().apply {moveTo(177f,178f);cubicTo(238f,189f,244f,114f,215f+sin(t.toDouble()).toFloat()*9f,111f)}
-   canvas.drawPath(tail,paint);paint.style=Paint.Style.FILL
-   circle(canvas,light,215f+sin(t.toDouble()).toFloat()*9f,111f,14f)
-   // Animated paws
-   val step=if(sleeping)0f else sin(t.toDouble()).toFloat()*6f
-   oval(canvas,orange,69f,185f+step,104f,230f+step)
-   oval(canvas,orange,153f,185f-step,188f,230f-step)
-   oval(canvas,white,68f,215f+step,108f,239f+step)
-   oval(canvas,white,151f,215f-step,191f,239f-step)
-   // Body, chest, belly
-   oval(canvas,orange,67f,115f,195f,219f)
-   oval(canvas,light,82f,135f,184f,218f)
-   oval(canvas,white,112f,142f,165f,217f)
-   // ears, head
-   path(canvas,orange,63f,85f,67f,28f,111f,64f)
-   path(canvas,orange,150f,65f,194f,28f,199f,87f)
-   path(canvas,Color.rgb(255,168,172),75f,71f,76f,47f,99f,70f)
-   path(canvas,Color.rgb(255,168,172),164f,69f,187f,47f,188f,73f)
-   oval(canvas,orange,54f,57f,207f,171f)
-   oval(canvas,light,62f,77f,199f,172f)
-   oval(canvas,white,73f,122f,137f,172f)
-   oval(canvas,white,127f,122f,192f,172f)
-   // stripes
-   line(canvas,Color.rgb(220,127,64),109f,68f,114f,85f,5f)
-   line(canvas,Color.rgb(220,127,64),132f,66f,132f,84f,5f)
-   line(canvas,Color.rgb(220,127,64),153f,68f,148f,85f,5f)
-   if(sleeping || frame%150 in 145..149){
-    line(canvas,brown,85f,116f,113f,116f,4f);line(canvas,brown,150f,116f,178f,116f,4f)
-   }else{
-    oval(canvas,brown,86f,101f,113f,132f);oval(canvas,brown,150f,101f,177f,132f)
-    circle(canvas,Color.WHITE,95f,108f,7f);circle(canvas,Color.WHITE,159f,108f,7f)
-    circle(canvas,Color.WHITE,107f,122f,3f);circle(canvas,Color.WHITE,171f,122f,3f)
-   }
-   path(canvas,Color.rgb(234,121,137),124f,136f,140f,136f,132f,144f)
-   line(canvas,brown,132f,145f,132f,151f,2f)
-   line(canvas,brown,132f,151f,123f,155f,2f);line(canvas,brown,132f,151f,141f,155f,2f)
-   for (i in 0..1){val dy=i*8f;line(canvas,brown,112f,145f+dy,65f,140f+dy,1.5f);line(canvas,brown,152f,145f+dy,199f,140f+dy,1.5f)}
-   val now=System.currentTimeMillis()
-   if(sleeping) {text(canvas,"Zzz",203f,48f,23f,Color.rgb(149,170,238))}
-   if(now<loveUntil){
-    val rise=((loveUntil-now)/20).toFloat()
-    text(canvas,"♥",52f,58f-rise%32,30f,Color.rgb(255,92,140))
-    text(canvas,"♥",209f,92f-(rise*1.5f)%42,22f,Color.rgb(255,133,167))
-   }
-   if(now<angryUntil){text(canvas,"💢",207f,63f,29f,Color.RED)}
-   if(now<butterflyUntil){
-    val bx=190f+sin(t.toDouble()).toFloat()*20f
-    val by=52f+cos(t.toDouble()).toFloat()*14f
-    circle(canvas,Color.rgb(173,125,243),bx-6f,by,8f);circle(canvas,Color.rgb(251,156,218),bx+6f,by,8f)
-    line(canvas,brown,bx,by-8f,bx,by+9f,2f)
-   }
-   canvas.restore()
+ override fun onCreate() {
+  super.onCreate()
+  val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+  nm.createNotificationChannel(NotificationChannel("miyov", "Miyov", NotificationManager.IMPORTANCE_LOW))
+  startForeground(7, Notification.Builder(this, "miyov").setSmallIcon(android.R.drawable.ic_menu_view).setContentTitle("Miyov").setContentText("Miyov ishlayapti").build())
+  wm = getSystemService(WINDOW_SERVICE) as WindowManager
+  params = WindowManager.LayoutParams(300, 260, WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS, PixelFormat.TRANSLUCENT).apply {
+   gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+   y = 280
   }
-  override fun onTouchEvent(e:MotionEvent):Boolean {when(e.actionMasked){
-   MotionEvent.ACTION_DOWN->{downX=e.rawX;downY=e.rawY;lastX=e.rawX;lastY=e.rawY;downTime=System.currentTimeMillis();dragging=false;return true}
-   MotionEvent.ACTION_MOVE->{if(hypot(e.rawX-downX,e.rawY-downY)>12f)dragging=true
-    if(dragging){lp.x+=(e.rawX-lastX).toInt();lp.y+=(e.rawY-lastY).toInt();try{wm.updateViewLayout(this,lp)}catch(_:Exception){}}
-    lastX=e.rawX;lastY=e.rawY;return true}
-   MotionEvent.ACTION_UP->{val now=System.currentTimeMillis()
-    if(!dragging){
-     if(now-downTime>850){stopSelf()}
-     else{
-      if(now-lastTap<650)taps++ else taps=1
-      lastTap=now
-      if(taps>=4){angryUntil=now+1700;taps=0}
-      else if(taps==2){loveUntil=now+2000}
-      else if(taps==3){butterflyUntil=now+2500}
-      try{tone?.startTone(ToneGenerator.TONE_PROP_BEEP2,120)}catch(_:Exception){}
+  cat = CatView()
+  try { wm.addView(cat, params); handler.post(animator) } catch (_: Exception) { stopSelf() }
+ }
+ override fun onStartCommand(intent: Intent?, flags: Int, startId: Int) = START_STICKY
+ override fun onBind(intent: Intent?): IBinder? = null
+ override fun onDestroy() {
+  handler.removeCallbacks(animator)
+  sound?.release()
+  if (::cat.isInitialized) try { wm.removeView(cat) } catch (_: Exception) {}
+  super.onDestroy()
+ }
+ inner class CatView : View(this@PetService) {
+  var dragging = false
+  var mode = "yurish"
+  private var modeUntil = 0L
+  private var taps = 0
+  private var lastTap = 0L
+  private var startX = 0f
+  private var startY = 0f
+  private var lastX = 0f
+  private var lastY = 0f
+  private var downAt = 0L
+  private var frame = 0
+  private val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
+  private val images = mutableMapOf<String, List<Bitmap>>()
+  init {
+   for (name in listOf("yurish", "yugurish", "sakrash", "uxlash", "erkalash", "jahl", "qiziqish")) {
+    val frames = mutableListOf<Bitmap>()
+    for (i in 1..8) try {
+     assets.open("miyov/${name}_%02d.png".format(i)).use { stream ->
+      BitmapFactory.decodeStream(stream)?.let { frames.add(it) }
      }
+    } catch (_: Exception) {}
+    if (frames.isNotEmpty()) images[name] = frames
+   }
+  }
+  fun advance(t: Int) {
+   if (System.currentTimeMillis() > modeUntil) {
+    mode = when {
+     t % 420 in 330..410 -> "uxlash"
+     t % 280 in 245..270 -> "qiziqish"
+     else -> "yurish"
     }
-    dragging=false;invalidate();return true}
-  };return true}
+   }
+   frame++
+   invalidate()
+  }
+  override fun onDraw(canvas: Canvas) {
+   super.onDraw(canvas)
+   val frames = images[mode] ?: images["yurish"] ?: return
+   val bitmap = frames[(frame / 2) % frames.size]
+   val scale = min(width.toFloat() / bitmap.width, height.toFloat() / bitmap.height) * 0.93f
+   val w = bitmap.width * scale
+   val h = bitmap.height * scale
+   canvas.drawBitmap(bitmap, null, RectF((width-w)/2, (height-h)/2, (width+w)/2, (height+h)/2), paint)
+  }
+  override fun onTouchEvent(e: MotionEvent): Boolean {
+   when (e.actionMasked) {
+    MotionEvent.ACTION_DOWN -> {
+     startX = e.rawX; startY = e.rawY; lastX = e.rawX; lastY = e.rawY
+     downAt = System.currentTimeMillis(); dragging = false; return true
+    }
+    MotionEvent.ACTION_MOVE -> {
+     if (hypot(e.rawX-startX, e.rawY-startY) > 12f) dragging = true
+     if (dragging) {
+      params.x += (e.rawX-lastX).toInt(); params.y += (e.rawY-lastY).toInt()
+      try { wm.updateViewLayout(this, params) } catch (_: Exception) {}
+     }
+     lastX = e.rawX; lastY = e.rawY; return true
+    }
+    MotionEvent.ACTION_UP -> {
+     val now = System.currentTimeMillis()
+     if (!dragging) {
+      if (now-downAt > 850) stopSelf()
+      else {
+       taps = if (now-lastTap < 650) taps+1 else 1; lastTap = now
+       mode = when { taps >= 4 -> "jahl"; taps == 3 -> "sakrash"; taps == 2 -> "erkalash"; else -> "qiziqish" }
+       modeUntil = now + 1800
+       if (taps >= 4) taps = 0
+       try { sound?.release(); sound = MediaPlayer.create(this@PetService, R.raw.meow); sound?.start() } catch (_: Exception) {}
+      }
+     }
+     dragging = false; invalidate(); return true
+    }
+   }
+   return true
+  }
  }
 }
