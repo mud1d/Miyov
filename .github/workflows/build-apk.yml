@@ -2,7 +2,7 @@ name: Build Miyov APK
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, miyov-3-assets]
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -20,6 +20,10 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
+      - name: Check sprite assets
+        run: |
+          test -f app/src/main/res/raw/meow.wav || { echo 'Missing meow.wav'; exit 1; }
+          test -f app/src/main/assets/miyov/yurish_01.png || { echo 'Missing sprite assets'; exit 1; }
       - name: Build debug APK
         run: gradle --no-daemon :app:assembleDebug
       - uses: actions/upload-artifact@v4
