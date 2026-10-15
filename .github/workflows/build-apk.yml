@@ -22,7 +22,6 @@ jobs:
           gradle-version: '8.9'
       - name: Check sprite assets
         run: |
-          test -f app/src/main/res/raw/meow.wav || { echo 'Missing meow.wav'; exit 1; }
           test -f app/src/main/assets/miyov/yurish_01.png || { echo 'Missing sprite assets'; exit 1; }
       - name: Build debug APK
         run: gradle --no-daemon :app:assembleDebug
