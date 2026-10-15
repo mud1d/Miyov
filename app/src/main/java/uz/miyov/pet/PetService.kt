@@ -3,7 +3,8 @@ package uz.miyov.pet
 import android.app.*
 import android.content.*
 import android.graphics.*
-import android.media.MediaPlayer
+import android.media.ToneGenerator
+import android.media.AudioManager
 import android.os.*
 import android.view.*
 import kotlin.math.*
@@ -16,7 +17,7 @@ class PetService : Service() {
  private val handler = Handler(Looper.getMainLooper())
  private var tick = 0
  private var direction = 1
- private var sound: MediaPlayer? = null
+ private var sound: ToneGenerator? = null
  private val animator = object : Runnable {
   override fun run() {
    if (!::cat.isInitialized) return
@@ -120,7 +121,7 @@ class PetService : Service() {
        mode = when { taps >= 4 -> "jahl"; taps == 3 -> "sakrash"; taps == 2 -> "erkalash"; else -> "qiziqish" }
        modeUntil = now + 1800
        if (taps >= 4) taps = 0
-       try { sound?.release(); sound = MediaPlayer.create(this@PetService, R.raw.meow); sound?.start() } catch (_: Exception) {}
+       try { sound?.release(); sound = ToneGenerator(AudioManager.STREAM_MUSIC, 45); sound?.startTone(ToneGenerator.TONE_PROP_BEEP2, 120) } catch (_: Exception) {}
       }
      }
      dragging = false; invalidate(); return true
