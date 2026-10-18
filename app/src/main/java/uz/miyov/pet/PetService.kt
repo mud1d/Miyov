@@ -127,11 +127,20 @@ class PetService : Service() {
             close()
         }
         private val images = mutableMapOf<String,List<Bitmap>>()
-        private val walking = WalkingRig(assets)
         init {
             contentDescription = "Miyov mushukcha"
-            for (name in listOf("yurish","yugurish","sakrash","uxlash","erkalash","jahl","qiziqish")) {
-                val count = if (name == "yurish" || name == "yugurish") 16 else 8
+            val atlas = assets.open("natural/walk_atlas.png").use {
+                requireNotNull(BitmapFactory.decodeStream(it))
+            }
+            require(atlas.width == 1536 && atlas.height == 1024)
+            val walkFrames = (0 until 24).map { i ->
+                Bitmap.createBitmap(atlas, (i % 6) * 256, (i / 6) * 256, 256, 256)
+            }
+            atlas.recycle()
+            images["yurish"] = walkFrames
+            images["yugurish"] = walkFrames
+            for (name in listOf("sakrash","uxlash","erkalash","jahl","qiziqish")) {
+                val count = 8
                 images[name] = (1..count).map { i ->
                     assets.open("miyov/${name}_%02d.png".format(java.util.Locale.US,i)).use {
                         requireNotNull(BitmapFactory.decodeStream(it))
@@ -162,8 +171,8 @@ class PetService : Service() {
             val age = (if (touchHeld) heldSince else now)-modeStarted
             // Gait follows actual distance, so feet cannot keep stepping while the pet stops.
             val frame = when (mode) {
-                "yurish" -> ((motion.distance/(24f*dp))*frames.size).toInt()%frames.size
-                "yugurish" -> ((motion.distance/(34f*dp))*frames.size).toInt()%frames.size
+                "yurish" -> ((motion.distance/(32f*dp))*frames.size).toInt()%frames.size
+                "yugurish" -> ((motion.distance/(32f*dp))*frames.size).toInt()%frames.size
                 "uxlash" -> ((age.coerceAtLeast(0)/350L)%frames.size).toInt()
                 else -> ((age.coerceAtLeast(0)/135L)%frames.size).toInt()
             }
@@ -174,10 +183,7 @@ class PetService : Service() {
             val mirror = canvas.save()
             if (motion.direction < 0) canvas.scale(-1f,1f,128f,128f)
             bitmapPaint.alpha = 255
-            if (mode == "yurish" || mode == "yugurish") {
-                val cycle = if (mode == "yugurish") 34f else 24f
-                walking.draw(canvas,motion.distance/(cycle*dp),mode == "yugurish")
-            } else canvas.drawBitmap(frames[frame],0f,0f,bitmapPaint)
+            canvas.drawBitmap(frames[frame],0f,0f,bitmapPaint)
             // Four red bent strokes form the anime forehead anger symbol, never a font glyph.
             if (now < mood.angryUntil) {
                 val pulse = 1f+0.06f*sin((now%650L)/650.0*2*PI).toFloat()

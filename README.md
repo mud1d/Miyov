@@ -1,21 +1,18 @@
-# Miyov 0.5
+# Miyov 0.6
 
-Yurish: bitta barqaror PNG tana va alohida oyoq/dum qismlari bilan uzluksiz animatsiya.
-To‘rtta oyoq navbat bilan ko‘tariladi, tizza bo‘g‘imlari bukiladi, yerga bosgan panja
-mushuk oldinga siljiganda yerda turadi. Tana har kadrda boshqa shaklga aylanmaydi.
-Yurish tezligi: 30 dp/sekund, yugurish 48 dp/sekund. Birinchi 114 soniyada
-avtomatik uyqu yo‘q; har ikki daqiqada 6 sekund uxlaydi.
+Yurish uchun 24 ta butun gavda PNG kadri: alohida oyoqlarni aylantiruvchi
+0.5 renderer o‘rniga yangi shaffof atlas qo‘llanadi. Atlas 6×4 katak;
+har bir kadr 256×256. Butun mushuk birga chiziladi, oyoq qismlari ulanmaydi.
+Kadrlar bosib o‘tilgan masofaga bog‘langan, to‘xtaganda qadam ham to‘xtaydi.
+Bir sikl 32 dp; odatiy tezlikda taxminan 22.5 kadr/sekund.
+Tez yurish ham shu sikldan foydalanadi, alohida yugurish animatsiyasi emas.
 
-2–7 bosish: yurakchalar. 3 bosish: kapalak ham chiqadi.
-8+ ketma-ket bosish: jahl va peshonada qizil belgi.
-Sudrash: joyini o‘zgartirish; uzoq bosish: yopish.
+2–7 bosish: yurakchalar. 3 bosish: kapalak. 8+ bosish: jahl belgisi.
+Sudra: joyini o‘zgartir. Uzoq bos: yop.
+Ovoz avvalgi 0.78 soniyalik yozuv; AUDIO_CREDITS.md ga qarang.
 
-Ovoz: 0.78 soniyalik Meow (Dan Crosby), CC BY-SA 3.0.
-To‘liq manba/litsenziya: AUDIO_CREDITS.md va ilovadagi havola.
-
-CI har safar harakat, bosishlar va oyoqning yerda turishi bo‘yicha testlarni,
-keyin APK yig‘ilishini bajaradi. Yurish qismlari kulrang fonda yig‘ilib ko‘rildi.
-Yakuniy Android qurilmasidagi ko‘rinish va ovoz hali foydalanuvchi tekshiruvini talab qiladi;
-bu muhitda ovozni tinglash imkoniyati yo‘q.
+PNGlar generativ usulda chizilgan: anatomik izchillik va tabiiylik mukammal
+deb kafolatlanmaydi. Shaffoflik, kadr o‘lchamlari va yig‘ilish tekshiriladi.
+Telefon ekranidagi yakuniy harakat foydalanuvchi tekshiruvini talab qiladi.
 
 APK: Actions → eng yangi muvaffaqiyatli Build Miyov APK → Artifacts → Miyov-APK.
