@@ -19,8 +19,8 @@ class PetSound(private val context: Context) {
         try {
             val current = player
             if (current != null) {
-                current.seekTo(0)
-                current.start()
+                // Let a real meow finish: rapid taps must not chop it into a buzzing sound.
+                if (!current.isPlaying) current.start()
                 return
             }
             val next = MediaPlayer()
@@ -38,7 +38,7 @@ class PetSound(private val context: Context) {
                 true
             }
             next.prepare()
-            next.setVolume(1f, 1f)
+            next.setVolume(0.85f, 0.85f)
             next.start()
         } catch (error: Exception) {
             Log.e("MiyovSound", "Cannot play bundled sound", error)
