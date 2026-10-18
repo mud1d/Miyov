@@ -23,7 +23,7 @@ class MainActivity : Activity() {
             setPadding((24*dp).toInt(), (32*dp).toInt(), (24*dp).toInt(), (24*dp).toInt())
         }
         layout.addView(TextView(this).apply {
-            text = "Miyov · PNG mushukcha\n\nBos — miyovlaydi.\n2–7 marta — yurakchalar.\n3 marta — kapalak ham chiqadi.\nKetma-ket 8 marta — jahli chiqadi.\nSudra — joyini o‘zgartiradi.\nUzoq bos — yopiladi.\n\nHaqiqiy mushuk ovozi, ravonroq yurish.\nOvoz uchun media balandligini tekshir.\n"
+            text = "Miyov · PNG mushukcha\n\nBos — miyovlaydi.\n2–7 marta — yurakchalar.\n3 marta — kapalak ham chiqadi.\nKetma-ket 8 marta — jahli chiqadi.\nSudra — joyini o‘zgartiradi.\nUzoq bos — yopiladi.\n\nQisqa miyov yozuvi, alohida oyoq harakati.\nOvoz uchun media balandligini tekshir.\n"
             textSize = 18f
         })
         layout.addView(Button(this).apply {
@@ -42,6 +42,14 @@ class MainActivity : Activity() {
         layout.addView(Button(this).apply {
             text = "Mushukchani yop"
             setOnClickListener { stopService(Intent(this@MainActivity, PetService::class.java)) }
+        })
+        layout.addView(TextView(this).apply {
+            text = "Ovoz: Meow — Dan Crosby · CC BY-SA 3.0\nManba va litsenziyani ochish"
+            textSize = 13f
+            setPadding(0,(16*dp).toInt(),0,0)
+            setOnClickListener {
+                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://commons.wikimedia.org/wiki/File:Meow.ogg")))
+            }
         })
         setContentView(ScrollView(this).apply { addView(layout) })
     }

@@ -32,8 +32,8 @@ class PetService : Service() {
             lastFrame = frameTimeNanos
             cat.advance(now)
             val speed = when (cat.mode) {
-                "yurish" -> 20f * dp
-                "yugurish" -> 42f * dp
+                "yurish" -> 30f * dp
+                "yugurish" -> 48f * dp
                 else -> 0f
             }
             val oldX = params.x
@@ -127,6 +127,7 @@ class PetService : Service() {
             close()
         }
         private val images = mutableMapOf<String,List<Bitmap>>()
+        private val walking = WalkingRig(assets)
         init {
             contentDescription = "Miyov mushukcha"
             for (name in listOf("yurish","yugurish","sakrash","uxlash","erkalash","jahl","qiziqish")) {
@@ -143,14 +144,13 @@ class PetService : Service() {
         }
         fun advance(now: Long) {
             if (touchHeld) return
-            val elapsed = (now-started)%48000L
+            val elapsed = (now-started)%120000L
             val next = when {
                 now < mood.angryUntil -> "jahl"
                 now < mood.loveUntil -> "erkalash"
                 now < reactionUntil -> reaction
-                elapsed in 36000L..45999L -> "uxlash"
-                elapsed in 22000L..24999L -> "qiziqish"
-                elapsed in 14000L..17999L -> "yugurish"
+                elapsed in 114000L..119999L -> "uxlash"
+                elapsed in 50000L..52999L -> "yugurish"
                 else -> "yurish"
             }
             setMode(next,now)
@@ -174,7 +174,10 @@ class PetService : Service() {
             val mirror = canvas.save()
             if (motion.direction < 0) canvas.scale(-1f,1f,128f,128f)
             bitmapPaint.alpha = 255
-            canvas.drawBitmap(frames[frame],0f,0f,bitmapPaint)
+            if (mode == "yurish" || mode == "yugurish") {
+                val cycle = if (mode == "yugurish") 34f else 24f
+                walking.draw(canvas,motion.distance/(cycle*dp),mode == "yugurish")
+            } else canvas.drawBitmap(frames[frame],0f,0f,bitmapPaint)
             // Four red bent strokes form the anime forehead anger symbol, never a font glyph.
             if (now < mood.angryUntil) {
                 val pulse = 1f+0.06f*sin((now%650L)/650.0*2*PI).toFloat()

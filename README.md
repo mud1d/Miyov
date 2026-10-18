@@ -1,26 +1,21 @@
-# Miyov 0.4
+# Miyov 0.5
 
-Kichik PNG mushukcha: 72 ta kadr, haqiqiy mushuk yozuvi va bosishga javoblar.
+Yurish: bitta barqaror PNG tana va alohida oyoq/dum qismlari bilan uzluksiz animatsiya.
+To‘rtta oyoq navbat bilan ko‘tariladi, tizza bo‘g‘imlari bukiladi, yerga bosgan panja
+mushuk oldinga siljiganda yerda turadi. Tana har kadrda boshqa shaklga aylanmaydi.
+Yurish tezligi: 30 dp/sekund, yugurish 48 dp/sekund. Birinchi 114 soniyada
+avtomatik uyqu yo‘q; har ikki daqiqada 6 sekund uxlaydi.
 
-- Yurish: 16 kadr. Yugurish: 16 kadr. Qolgan 5 holat: har birida 8 kadr.
-- Harakat ekran yangilanishi bilan sinxron; tezlik vaqtga bog‘liq, oyoq fazasi bosib o‘tilgan masofaga mos.
-- 2–7 ketma-ket bosish: uchib chiqadigan yurakchalar.
-- 3 bosish: yurakchalar bilan kapalak.
-- 8 va undan ortiq ketma-ket bosish: jahl holati va peshona oldida qizil to‘rt burchakli anime belgisi.
-- Bosishlar orasida 1 sekunddan ortiq tanaffus bo‘lsa hisob qaytadan boshlanadi.
-- Sudrashda joyini o‘zgartiradi; uzoq bosish yopadi.
-- Haqiqiy yumshoq miyov yozuvi chalinayotganida uni qayta boshlamaydi; ovoz uzilib g‘alati tovushga aylanmaydi.
-- Ovoz «Ovozni tekshir» tugmasi orqali tekshiriladi; telefonning media ovozi ishlatiladi.
+2–7 bosish: yurakchalar. 3 bosish: kapalak ham chiqadi.
+8+ ketma-ket bosish: jahl va peshonada qizil belgi.
+Sudrash: joyini o‘zgartirish; uzoq bosish: yopish.
 
-## APK
-Actions → eng yangi muvaffaqiyatli Build Miyov APK → Artifacts → Miyov-APK.
-ZIP ichidagi app-debug.apk faylini telefonga o‘rnating.
+Ovoz: 0.78 soniyalik Meow (Dan Crosby), CC BY-SA 3.0.
+To‘liq manba/litsenziya: AUDIO_CREDITS.md va ilovadagi havola.
 
-## Tekshiruv
-CI har safar PetDynamicsTest unit testlarini va APK yig‘ilishini bajaradi.
-Testlar turli ekran chastotalarida masofa bir xil chiqishini, ushlashda to‘xtashni,
-yurakcha/jahl bosqichlarini va chegaradan qaytishni tekshiradi.
-PNGlar shaffof chetlar, to‘liq tana va 72 farqli kadr bo‘yicha tekshirilgan.
-AI yaratgan rasmlarda mayda kadrlararo farqlar qolishi mumkin.
-Telefondagi yakuniy seziladigan ravonlik va ovoz foydalanuvchi qurilmasida tekshirilishi kerak.
-Ovoz manbasi va litsenziyasi: AUDIO_CREDITS.md.
+CI har safar harakat, bosishlar va oyoqning yerda turishi bo‘yicha testlarni,
+keyin APK yig‘ilishini bajaradi. Yurish qismlari kulrang fonda yig‘ilib ko‘rildi.
+Yakuniy Android qurilmasidagi ko‘rinish va ovoz hali foydalanuvchi tekshiruvini talab qiladi;
+bu muhitda ovozni tinglash imkoniyati yo‘q.
+
+APK: Actions → eng yangi muvaffaqiyatli Build Miyov APK → Artifacts → Miyov-APK.

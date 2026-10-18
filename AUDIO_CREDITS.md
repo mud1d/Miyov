@@ -1,6 +1,11 @@
-Real cat recording: "cat_softmew.wav" from "Cat Purr & Meow" by Kerzoven.
-Source: https://opengameart.org/content/cat-purr-meow
-Original: https://opengameart.org/sites/default/files/cat_softmew.wav
-License: CC0 1.0 (public domain dedication).
-Local processing: mono 22050 Hz PCM, 80 Hz high-pass and short endpoint fades.
-Playback does not restart the recording while it is already playing.
+# Cat voice
+
+"Meow.ogg" — Silas the cat, recorded by Dan Crosby (Dcrosby).
+Source: https://commons.wikimedia.org/wiki/File:Meow.ogg
+License: Creative Commons Attribution-ShareAlike 3.0 Unported
+https://creativecommons.org/licenses/by-sa/3.0/
+
+Converted to mono 22050 Hz PCM/WAV and increased by 6 dB; no pitch synthesis.
+The distributed adapted audio remains under CC BY-SA 3.0.
+This recording replaces the previous 2.48-second soft-mew/purr file.
+The asset's description and waveform were checked; the assistant runtime cannot listen to audio.
