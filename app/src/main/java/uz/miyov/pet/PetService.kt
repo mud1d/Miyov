@@ -129,12 +129,12 @@ class PetService : Service() {
         private val images = mutableMapOf<String,List<Bitmap>>()
         init {
             contentDescription = "Miyov mushukcha"
-            val atlas = assets.open("natural/walk_atlas.png").use {
+            val atlas = assets.open("natural/walk32_atlas.png").use {
                 requireNotNull(BitmapFactory.decodeStream(it))
             }
-            require(atlas.width == 1536 && atlas.height == 1024)
-            val walkFrames = (0 until 24).map { i ->
-                Bitmap.createBitmap(atlas, (i % 6) * 256, (i / 6) * 256, 256, 256)
+            require(atlas.width == 2048 && atlas.height == 1024)
+            val walkFrames = (0 until 32).map { i ->
+                Bitmap.createBitmap(atlas, (i % 8) * 256, (i / 8) * 256, 256, 256)
             }
             atlas.recycle()
             images["yurish"] = walkFrames
@@ -171,8 +171,8 @@ class PetService : Service() {
             val age = (if (touchHeld) heldSince else now)-modeStarted
             // Gait follows actual distance, so feet cannot keep stepping while the pet stops.
             val frame = when (mode) {
-                "yurish" -> ((motion.distance/(32f*dp))*frames.size).toInt()%frames.size
-                "yugurish" -> ((motion.distance/(32f*dp))*frames.size).toInt()%frames.size
+                "yurish" -> ((motion.distance/(28f*dp))*frames.size).toInt()%frames.size
+                "yugurish" -> ((motion.distance/(28f*dp))*frames.size).toInt()%frames.size
                 "uxlash" -> ((age.coerceAtLeast(0)/350L)%frames.size).toInt()
                 else -> ((age.coerceAtLeast(0)/135L)%frames.size).toInt()
             }
