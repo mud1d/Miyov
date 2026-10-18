@@ -16,6 +16,7 @@ class PetService : Service() {
  private val h=Handler(Looper.getMainLooper())
  private var frame=0
  private var direction=1
+ private var movementTicks=0
  private fun meow() {
   Thread {
    try {
@@ -48,12 +49,12 @@ class PetService : Service() {
   if (::pet.isInitialized) {
    frame++
    if(frame%110==0) direction=if(Random.nextBoolean()) 1 else -1
+   pet.sleeping=frame%480 in 355..465
    if(frame%4==0 && !pet.dragging && !pet.sleeping) {
     val half=resources.displayMetrics.widthPixels/2-105
     lp.x=(lp.x+direction*3).coerceIn(-half,half)
     try { wm.updateViewLayout(pet,lp) } catch (_:Exception) {}
    }
-   pet.sleeping=frame%480 in 355..465
    pet.invalidate()
    h.postDelayed(this,45)
   }
@@ -91,15 +92,16 @@ class PetService : Service() {
   override fun onDraw(canvas:Canvas){super.onDraw(canvas)
    canvas.save();canvas.scale(width/260f,height/280f)
    val t=frame*.16f
-   val hop=if(sleeping) 0f else abs(sin(t.toDouble())).toFloat()*3f
+   val hop=if(sleeping || dragging) 0f else abs(sin(t.toDouble())).toFloat()*3f
    canvas.translate(0f,-hop)
+   if(sleeping) { canvas.translate(0f,13f); canvas.scale(1.04f,0.91f,130f,185f) }
    // Curved fluffy tail behind body
    paint.color=orange;paint.style=Paint.Style.STROKE;paint.strokeWidth=24f;paint.strokeCap=Paint.Cap.ROUND
    val tail=Path().apply {moveTo(177f,178f);cubicTo(238f,189f,244f,114f,215f+sin(t.toDouble()).toFloat()*9f,111f)}
    canvas.drawPath(tail,paint);paint.style=Paint.Style.FILL
    circle(canvas,light,215f+sin(t.toDouble()).toFloat()*9f,111f,14f)
    // Animated paws
-   val step=if(sleeping)0f else sin(t.toDouble()).toFloat()*6f
+   val step=if(sleeping || dragging)0f else sin(t.toDouble()).toFloat()*6f
    oval(canvas,orange,69f,185f+step,104f,230f+step)
    oval(canvas,orange,153f,185f-step,188f,230f-step)
    oval(canvas,white,68f,215f+step,108f,239f+step)
@@ -139,11 +141,18 @@ class PetService : Service() {
     text(canvas,"♥",52f,58f-rise%32,30f,Color.rgb(255,92,140))
     text(canvas,"♥",209f,92f-(rise*1.5f)%42,22f,Color.rgb(255,133,167))
    }
-   if(now<angryUntil){text(canvas,"💢",207f,63f,29f,Color.RED)}
+   if(now<angryUntil){
+    circle(canvas,Color.rgb(255,115,115),79f,141f,11f)
+    circle(canvas,Color.rgb(255,115,115),181f,141f,11f)
+    line(canvas,brown,94f,96f,113f,103f,4f)
+    line(canvas,brown,168f,96f,150f,103f,4f)
+   }
    if(now<butterflyUntil){
     val bx=190f+sin(t.toDouble()).toFloat()*20f
     val by=52f+cos(t.toDouble()).toFloat()*14f
-    circle(canvas,Color.rgb(173,125,243),bx-6f,by,8f);circle(canvas,Color.rgb(251,156,218),bx+6f,by,8f)
+    val flap=abs(sin(t.toDouble()*3)).toFloat()
+    oval(canvas,Color.rgb(173,125,243),bx-15f-flap*7f,by-11f,bx-1f,by+9f)
+    oval(canvas,Color.rgb(251,156,218),bx+1f,by-11f,bx+15f+flap*7f,by+9f)
     line(canvas,brown,bx,by-8f,bx,by+9f,2f)
    }
    canvas.restore()
