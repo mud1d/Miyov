@@ -42,4 +42,16 @@ class PetDynamicsTest {
         repeat(600) { m.step(1f/60,20f,100f,false); assertTrue(m.x>=0f && m.x<=100f) }
         assertTrue(m.distance>100f)
     }
+    @Test fun reactionStopDoesNotSlideOrAdvanceGait() {
+        val m=PetMotion(); m.x=100f
+        repeat(60) { m.step(1f/60,30f,1000f,false) }
+        val position=m.x; val distance=m.distance
+        m.stop()
+        repeat(180) { m.step(1f/60,0f,1000f,false) }
+        assertEquals(position,m.x,0f)
+        assertEquals(distance,m.distance,0f)
+        assertEquals(0f,m.velocity,0f)
+        m.step(1f/60,30f,1000f,false)
+        assertTrue(m.distance>distance)
+    }
 }

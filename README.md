@@ -1,23 +1,27 @@
-# Miyov 0.7
+# Miyov 0.8
 
-Yurish qayta chizildi: 32 ta butun gavda PNG kadri, 8×4 atlas.
-Har bir 256×256 kadr masofa bo‘yicha almashadi; bir sikl 28 dp.
-30 dp/sekund tezlikda taxminan 34.3 kadr/sekund. Asosiy pozalar to‘rtta
-oyoq uchun alohida fazalar bilan chizilgan sxema asosida yaratildi.
-0.6 dagi kichik panja o‘zgarishlari o‘rniga panjaning ko‘tarilishi va
-oldinga o‘tishi ko‘rinadigan kengroq qadam pozalari ishlatiladi.
-Ilova sarlavhasida 0.7 raqami bor, o‘rnatilgan versiyani ajratish oson.
+Yurishdagi qoramtir oyoqlar ranglari qayta chizildi: barcha oyoqlar och sariq,
+panjalar oq. Yurish sikli 32 kadr, masofa 28 dp; yurish tezligi30 dp/s.
 
-2–7 bosish: yurakchalar; 3 bosish: kapalak; 8+ bosish: jahl belgisi.
-Sudra: joyini o‘zgartir; uzoq bos: yop. Ovoz 0.6 bilan bir xil.
-Tez yurishda shu sikl tezroq ishlatiladi; alohida yugurish sikli yaratilmagan.
+Bosgandagi keskin gavda almashishi tuzatildi. Reaksiya boshlanganda ayni yurish
+pozasi saqlanadi va siljish to‘xtaydi. Erkalash va jahlda faqat yuzdagi kichik
+oval soha o‘zgaradi: 32 yurish pozasining har biri uchun mos yuz mavjud.
+Gavda, oyoqlar va dum xuddi o‘sha yurish bitmapidan olinadi.
+Eski o‘tirgan va cho‘kkan reaksiya PNGlariga almashmaydi.
+Kichik yuz bitmapi kesib olinadi, 64 to‘liq gavda bitmapi RAMda saqlanmaydi.
 
-Rasmlar generativ bo‘lgani uchun ideal anatomik/temporal aniqlik kafolatlanmaydi.
-Mahalliy tekshiruv: 32 ta alohida kadr, shaffof fon, bir xil o‘lcham va
-yer chizig‘i; kattalashtirilgan pozalar va masofaga bog‘liq preview.
-CI harakat/bosish testlarini va APK yig‘ilishini bajaradi. Android telefondagi
-ko‘rinish hali foydalanuvchi tekshiruvini talab qiladi. Ovoz bu muhitda tinglanmadi.
+2–7 bosish: yurakchalar va mamnun ko‘zlar. 3 bosish: kapalak ham chiqadi.
+8+ bosish: jahl ifodasi va peshona ustida qizil belgi.
+Sudra: joyini o‘zgartir; uzoq bos: yop.
+Uyqu va audio ushbu versiyada qayta ishlanmagan.
 
+Tekshiruv: 3 atlasdagi96 pozaning o‘lchamlari, alohidaligi, shaffof chetlari;
+yuz almashtirish namunasida ovaldan tashqarida gavda piksellari o‘zgarmasligi.
+CI reaksiya vaqtida sirpanib ketmaslik testini, avvalgi harakat/bosish testlarini
+va APK yig‘ilishini bajaradi. Mahalliy preview Android telefon yozuvi emas;
+yakuniy qurilmadagi ko‘rinish yana tekshirilishi kerak. Ovoz bu muhitda tinglanmadi.
+
+Ilova sarlavhasida0.8 ko‘rinadi.
 APK: Actions → Build Miyov APK → eng yangi muvaffaqiyatli ish → Miyov-APK.
-Yangi aktiv: app/src/main/assets/natural/walk32_atlas.png.
-Chizish tafsilotlari: GUIDED_WALK_NOTES.md. Ovoz litsenziyasi: AUDIO_CREDITS.md.
+Reaksiyalar namunasi: artwork/reactions-preview.mp4.
+Manbalar: MATCHED_REACTION_NOTES.md va AUDIO_CREDITS.md.

@@ -23,7 +23,7 @@ class MainActivity : Activity() {
             setPadding((24*dp).toInt(), (32*dp).toInt(), (24*dp).toInt(), (24*dp).toInt())
         }
         layout.addView(TextView(this).apply {
-            text = "Miyov 0.7 · PNG mushukcha\n\nBos — miyovlaydi.\n2–7 marta — yurakchalar.\n3 marta — kapalak ham chiqadi.\nKetma-ket 8 marta — jahli chiqadi.\nSudra — joyini o‘zgartiradi.\nUzoq bos — yopiladi.\n\nYurish uchun 32 ta yangi PNG kadr.\nOvoz uchun media balandligini tekshir.\n"
+            text = "Miyov 0.8 · PNG mushukcha\n\nBos — miyovlaydi.\n2–7 marta — yurakchalar.\n3 marta — kapalak ham chiqadi.\nKetma-ket 8 marta — jahli chiqadi.\nSudra — joyini o‘zgartiradi.\nUzoq bos — yopiladi.\n\n32 ta yurish kadri, mos yuz ifodalari.\nOvoz uchun media balandligini tekshir.\n"
             textSize = 18f
         })
         layout.addView(Button(this).apply {

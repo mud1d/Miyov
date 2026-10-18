@@ -12,6 +12,9 @@ class PetMotion {
     var distance = 0f
         private set
 
+    /** Freeze position and gait when a standing reaction begins. */
+    fun stop() { velocity = 0f }
+
     fun step(seconds: Float, targetSpeed: Float, maxX: Float, held: Boolean) {
         val dt = seconds.coerceIn(0f, 0.05f)
         if (held) { velocity = 0f; return }

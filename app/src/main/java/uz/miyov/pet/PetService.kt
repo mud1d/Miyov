@@ -127,29 +127,48 @@ class PetService : Service() {
             close()
         }
         private val images = mutableMapOf<String,List<Bitmap>>()
-        init {
-            contentDescription = "Miyov mushukcha"
-            val atlas = assets.open("natural/walk32_atlas.png").use {
-                requireNotNull(BitmapFactory.decodeStream(it))
-            }
+        private val expressions = mutableMapOf<String,List<Bitmap>>()
+        private var reactionFrame = 0
+        private val faceClip = Path().apply {
+            addOval(180f,98f,237f,158f,Path.Direction.CW)
+        }
+        private fun loadAtlas(path: String, facesOnly: Boolean = false): List<Bitmap> {
+            val atlas = assets.open(path).use { requireNotNull(BitmapFactory.decodeStream(it)) }
             require(atlas.width == 2048 && atlas.height == 1024)
-            val walkFrames = (0 until 32).map { i ->
-                Bitmap.createBitmap(atlas, (i % 8) * 256, (i / 8) * 256, 256, 256)
+            val frames = (0 until 32).map { i ->
+                val x = (i % 8) * 256
+                val y = (i / 8) * 256
+                if (facesOnly) Bitmap.createBitmap(atlas,x+180,y+98,57,60)
+                else Bitmap.createBitmap(atlas,x,y,256,256)
             }
             atlas.recycle()
-            images["yurish"] = walkFrames
-            images["yugurish"] = walkFrames
-            for (name in listOf("sakrash","uxlash","erkalash","jahl","qiziqish")) {
-                val count = 8
-                images[name] = (1..count).map { i ->
-                    assets.open("miyov/${name}_%02d.png".format(java.util.Locale.US,i)).use {
-                        requireNotNull(BitmapFactory.decodeStream(it))
-                    }
+            return frames
+        }
+        init {
+            contentDescription = "Miyov mushukcha"
+            val walking = loadAtlas("unified/walk_atlas.png")
+            images["yurish"] = walking
+            images["yugurish"] = walking
+            images["qiziqish"] = walking
+            expressions["erkalash"] = loadAtlas("unified/love_atlas.png",true)
+            expressions["jahl"] = loadAtlas("unified/angry_atlas.png",true)
+            images["uxlash"] = (1..8).map { i ->
+                assets.open("miyov/uxlash_%02d.png".format(java.util.Locale.US,i)).use {
+                    requireNotNull(BitmapFactory.decodeStream(it))
                 }
             }
         }
+        private fun gaitFrame() = ((motion.distance/(28f*dp))*32).toInt()%32
         private fun setMode(next: String, now: Long) {
-            if (next != mode) { mode = next; modeStarted = now }
+            if (next != mode) {
+                if ((mode == "yurish" || mode == "yugurish") &&
+                    next != "yurish" && next != "yugurish") {
+                    reactionFrame = gaitFrame()
+                    motion.stop()
+                }
+                mode = next
+                modeStarted = now
+            }
         }
         fun advance(now: Long) {
             if (touchHeld) return
@@ -167,14 +186,14 @@ class PetService : Service() {
         override fun onDraw(canvas: Canvas) {
             super.onDraw(canvas)
             val now = SystemClock.uptimeMillis()
-            val frames = images[mode] ?: return
+            val frames = images[mode] ?: images.getValue("yurish")
             val age = (if (touchHeld) heldSince else now)-modeStarted
             // Gait follows actual distance, so feet cannot keep stepping while the pet stops.
             val frame = when (mode) {
-                "yurish" -> ((motion.distance/(28f*dp))*frames.size).toInt()%frames.size
-                "yugurish" -> ((motion.distance/(28f*dp))*frames.size).toInt()%frames.size
+                "yurish" -> gaitFrame()
+                "yugurish" -> gaitFrame()
                 "uxlash" -> ((age.coerceAtLeast(0)/350L)%frames.size).toInt()
-                else -> ((age.coerceAtLeast(0)/135L)%frames.size).toInt()
+                else -> reactionFrame
             }
             val scale = min(width/256f,(height-24*dp)/256f)
             val save = canvas.save()
@@ -184,11 +203,18 @@ class PetService : Service() {
             if (motion.direction < 0) canvas.scale(-1f,1f,128f,128f)
             bitmapPaint.alpha = 255
             canvas.drawBitmap(frames[frame],0f,0f,bitmapPaint)
+            expressions[mode]?.let { faces ->
+                // The underlying torso, paws and tail are the exact same walk frame.
+                val faceSave = canvas.save()
+                canvas.clipPath(faceClip)
+                canvas.drawBitmap(faces[frame],180f,98f,bitmapPaint)
+                canvas.restoreToCount(faceSave)
+            }
             // Four red bent strokes form the anime forehead anger symbol, never a font glyph.
             if (now < mood.angryUntil) {
                 val pulse = 1f+0.06f*sin((now%650L)/650.0*2*PI).toFloat()
                 val a = canvas.save()
-                canvas.translate(211f,128f);canvas.scale(pulse,pulse)
+                canvas.translate(225f,84f);canvas.scale(pulse,pulse)
                 fx.color = Color.rgb(237,56,67);fx.style = Paint.Style.STROKE
                 fx.strokeWidth = 5f;fx.strokeCap = Paint.Cap.ROUND;fx.strokeJoin = Paint.Join.ROUND
                 val mark = Path().apply {
