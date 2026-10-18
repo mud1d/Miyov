@@ -16,7 +16,34 @@ class PetService : Service() {
  private val h=Handler(Looper.getMainLooper())
  private var frame=0
  private var direction=1
- private var tone:ToneGenerator?=null
+ private fun meow() {
+  Thread {
+   try {
+    val rate = 22050
+    val duration = 0.55
+    val samples = ShortArray((rate * duration).toInt())
+    var phase = 0.0
+    for (i in samples.indices) {
+     val progress = i.toDouble() / samples.size
+     val freq = if (progress < 0.4) 520.0 + 500.0 * progress / 0.4 else 1020.0 - 620.0 * (progress - 0.4) / 0.6
+     phase += 2.0 * Math.PI * freq / rate
+     val envelope = sin(Math.PI * progress).coerceAtLeast(0.0)
+     val voice = sin(phase) + 0.25 * sin(phase * 2.0)
+     samples[i] = (voice * envelope * 10000).toInt().coerceIn(-32768, 32767).toShort()
+    }
+    val audio = AudioTrack.Builder()
+     .setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION).setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build())
+     .setAudioFormat(AudioFormat.Builder().setEncoding(AudioFormat.ENCODING_PCM_16BIT).setSampleRate(rate).setChannelMask(AudioFormat.CHANNEL_OUT_MONO).build())
+     .setBufferSizeInBytes(samples.size * 2).setTransferMode(AudioTrack.MODE_STATIC).build()
+    audio.write(samples, 0, samples.size)
+    audio.play()
+    Thread.sleep(650)
+    audio.stop()
+    audio.release()
+   } catch (_: Exception) {}
+  }.start()
+ }
+
  private val ticker=object:Runnable { override fun run() {
   if (::pet.isInitialized) {
    frame++
@@ -35,7 +62,6 @@ class PetService : Service() {
   val nm=getSystemService(NOTIFICATION_SERVICE) as NotificationManager
   nm.createNotificationChannel(NotificationChannel("miyov","Miyov",NotificationManager.IMPORTANCE_LOW))
   startForeground(7,Notification.Builder(this,"miyov").setSmallIcon(android.R.drawable.ic_menu_view).setContentTitle("Miyov 🐱").setContentText("Miyov ekranda").build())
-  tone=ToneGenerator(AudioManager.STREAM_MUSIC,65)
   wm=getSystemService(WINDOW_SERVICE) as WindowManager
   lp=WindowManager.LayoutParams(260,280,WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
@@ -45,7 +71,7 @@ class PetService : Service() {
  }
  override fun onStartCommand(intent:Intent?,flags:Int,startId:Int)=START_STICKY
  override fun onBind(intent:Intent?):IBinder?=null
- override fun onDestroy(){h.removeCallbacks(ticker);tone?.release();if(::pet.isInitialized)try{wm.removeView(pet)}catch(_:Exception){};super.onDestroy()}
+ override fun onDestroy(){h.removeCallbacks(ticker);if(::pet.isInitialized)try{wm.removeView(pet)}catch(_:Exception){};super.onDestroy()}
 
  inner class PetView:View(this@PetService) {
   var dragging=false;var sleeping=false
@@ -136,7 +162,7 @@ class PetService : Service() {
       if(taps>=4){angryUntil=now+1700;taps=0}
       else if(taps==2){loveUntil=now+2000}
       else if(taps==3){butterflyUntil=now+2500}
-      try{tone?.startTone(ToneGenerator.TONE_PROP_BEEP2,120)}catch(_:Exception){}
+      meow()
      }
     }
     dragging=false;invalidate();return true}
