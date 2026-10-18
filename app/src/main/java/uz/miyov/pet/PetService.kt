@@ -26,7 +26,7 @@ class PetService : Service() {
             if (!attached) return
             tick++
             cat.advance(tick)
-            if (!cat.pressed && cat.mode in listOf("yurish", "yugurish")) {
+            if (!cat.touchHeld && cat.mode in listOf("yurish", "yugurish")) {
                 val speed = if (cat.mode == "yugurish") 2.6f else 1.3f
                 val step = max(1, (speed * dp).roundToInt())
                 val maxX = max(0, resources.displayMetrics.widthPixels - params.width)
@@ -101,7 +101,7 @@ class PetService : Service() {
     }
 
     inner class CatView : View(this@PetService) {
-        var pressed = false
+        var touchHeld = false
         private var dragging = false
         var mode = "yurish"
         private var modeUntil = 0L
@@ -115,7 +115,7 @@ class PetService : Service() {
         private var longPressed = false
         private val slop = ViewConfiguration.get(this@PetService).scaledTouchSlop
         private val closePet = Runnable {
-            if (pressed && !dragging) {
+            if (touchHeld && !dragging) {
                 longPressed = true
                 stopSelf()
             }
@@ -135,7 +135,7 @@ class PetService : Service() {
         }
 
         fun advance(t: Int) {
-            if (pressed) return
+            if (touchHeld) return
             if (SystemClock.uptimeMillis() > modeUntil) {
                 val next = when {
                     t % 420 in 330..410 -> "uxlash"
@@ -191,7 +191,7 @@ class PetService : Service() {
         override fun onTouchEvent(e: MotionEvent): Boolean {
             when (e.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
-                    pressed = true
+                    touchHeld = true
                     dragging = false
                     longPressed = false
                     startX = e.rawX; startY = e.rawY
@@ -211,13 +211,13 @@ class PetService : Service() {
                 }
                 MotionEvent.ACTION_UP -> {
                     handler.removeCallbacks(closePet)
-                    pressed = false
+                    touchHeld = false
                     if (!dragging && !longPressed) performClick()
                     dragging = false
                 }
                 MotionEvent.ACTION_CANCEL -> {
                     handler.removeCallbacks(closePet)
-                    pressed = false
+                    touchHeld = false
                     dragging = false
                 }
             }
